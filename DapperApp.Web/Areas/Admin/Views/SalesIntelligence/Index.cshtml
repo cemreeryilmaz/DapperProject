@@ -1,0 +1,149 @@
+@model SalesIntelligenceViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Satış analizi";
+    var chart = JsonSerializer.Serialize(new
+    {
+        cities = Model.Cities.Select(item => item.CityName),
+        cityRevenue = Model.Cities.Select(item => item.Revenue),
+        months = Model.MatrixMonths,
+        series = Model.Matrix.Take(5).Select(item => new { name = item.CategoryName, values = item.Values })
+    });
+}
+<section class="sp-heading">
+    <div>
+        <h1>Satış analizi</h1>
+        <p>@Model.StartDate.ToString("dd.MM.yyyy") – @Model.EndDate.ToString("dd.MM.yyyy") · önceki dönem @Model.PreviousStart.ToString("dd.MM.yyyy") – @Model.PreviousEnd.ToString("dd.MM.yyyy") · @Model.ElapsedMs.ToString("N0") ms</p>
+    </div>
+    <partial name="_DateFilter" model="new DateWindow(Model.StartDate, Model.EndDate, Model.EndDate.AddDays(1))" />
+</section>
+
+<section class="sp-compare">
+    <article class="sp-stat">
+        <span>Ciro</span>
+        <strong>@SalesFormat.CompactMoney(Model.Current.TotalRevenue)</strong>
+        <div class="sp-delta @SalesFormat.DeltaClass(Model.Current.TotalRevenue, Model.Previous.TotalRevenue)">@SalesFormat.Delta(Model.Current.TotalRevenue, Model.Previous.TotalRevenue)</div>
+    </article>
+    <article class="sp-stat">
+        <span>Sipariş</span>
+        <strong>@SalesFormat.Number(Model.Current.TotalOrders)</strong>
+        <div class="sp-delta @SalesFormat.DeltaClass(Model.Current.TotalOrders, Model.Previous.TotalOrders)">@SalesFormat.Delta(Model.Current.TotalOrders, Model.Previous.TotalOrders)</div>
+    </article>
+    <article class="sp-stat">
+        <span>Aktif müşteri</span>
+        <strong>@SalesFormat.Number(Model.Current.ActiveCustomers)</strong>
+        <div class="sp-delta @SalesFormat.DeltaClass(Model.Current.ActiveCustomers, Model.Previous.ActiveCustomers)">@SalesFormat.Delta(Model.Current.ActiveCustomers, Model.Previous.ActiveCustomers)</div>
+    </article>
+    <article class="sp-stat">
+        <span>Ortalama sepet</span>
+        <strong>@SalesFormat.Money(Model.Current.AverageBasket)</strong>
+        <div class="sp-delta @SalesFormat.DeltaClass(Model.Current.AverageBasket, Model.Previous.AverageBasket)">@SalesFormat.Delta(Model.Current.AverageBasket, Model.Previous.AverageBasket)</div>
+    </article>
+</section>
+
+<section class="sp-grid split">
+    <article class="sp-card sp-repeat">
+        <div>
+            <b>@SalesFormat.Percent(Model.CurrentRepeat.RepeatRate ?? 0)</b>
+        </div>
+        <div>
+            <h2>Tekrar alışveriş oranı</h2>
+            <p class="sp-note">Dönemde en az iki siparişi olan müşterilerin, sipariş veren müşterilere oranı. İptaller hariç.</p>
+            <p>@SalesFormat.Number(Model.CurrentRepeat.RepeatCustomers) tekrar eden / @SalesFormat.Number(Model.CurrentRepeat.ActiveCustomers) aktif müşteri</p>
+            <p class="sp-meta">Önceki dönem: @SalesFormat.Percent(Model.PreviousRepeat.RepeatRate ?? 0)</p>
+        </div>
+    </article>
+    <article class="sp-card">
+        <h2>En çok satış yapılan şehirler</h2>
+        <p class="sp-note">En az 50 siparişi olan şehirler, ciroya göre. HAVING SQL tarafında uygulanır.</p>
+        <div class="sp-chart"><canvas id="salesCityChart"></canvas></div>
+    </article>
+</section>
+
+<section class="sp-card" style="margin-bottom:14px">
+    <h2>En yüksek cirolu 20 müşteri</h2>
+    <p class="sp-note">Dönemde en az iki siparişi olan müşteriler. Gruplama ve HAVING veritabanında çalışır.</p>
+    <div class="sp-table-wrap">
+        <table class="sp-table">
+            <thead>
+                <tr><th>#</th><th>Müşteri</th><th>Şehir</th><th class="sp-num">Sipariş</th><th class="sp-num">Ort. sepet</th><th class="sp-num">Ciro</th></tr>
+            </thead>
+            <tbody>
+                @{ var rank = 1; }
+                @foreach (var customer in Model.TopCustomers)
+                {
+                    <tr>
+                        <td>@rank</td>
+                        <td>@customer.CustomerName</td>
+                        <td>@customer.CityName</td>
+                        <td class="sp-num">@SalesFormat.Number(customer.OrderCount)</td>
+                        <td class="sp-num">@SalesFormat.Money(customer.AverageBasket)</td>
+                        <td class="sp-num">@SalesFormat.Money(customer.Revenue)</td>
+                    </tr>
+                    rank++;
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="sp-card" style="margin-bottom:14px">
+    <h2>Kategorilerin aylık performansı</h2>
+    <p class="sp-note">Ciroya göre ilk 8 kategori. Grafik ilk 5 kategoriyi gösterir.</p>
+    <div class="sp-chart"><canvas id="categoryMonthChart"></canvas></div>
+    <div class="sp-table-wrap" style="margin-top:16px">
+        <table class="sp-table">
+            <thead>
+                <tr>
+                    <th>Kategori</th>
+                    @foreach (var month in Model.MatrixMonths)
+                    {
+                        <th class="sp-num">@month</th>
+                    }
+                    <th class="sp-num">Toplam</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Matrix)
+                {
+                    <tr>
+                        <td>@row.CategoryName</td>
+                        @foreach (var value in row.Values)
+                        {
+                            <td class="sp-num">@value.ToString("N0")</td>
+                        }
+                        <td class="sp-num">@SalesFormat.Money(row.Total)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="sp-card">
+    <h2>En yüksek gelir sağlayan ürünler</h2>
+    <p class="sp-note">Kalem tutarları SQL içinde toplanır.</p>
+    <div class="sp-table-wrap">
+        <table class="sp-table">
+            <thead>
+                <tr><th>Ürün</th><th>Kategori</th><th class="sp-num">Adet</th><th class="sp-num">Ciro</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var product in Model.TopProducts)
+                {
+                    <tr>
+                        <td>@product.ProductName</td>
+                        <td>@product.CategoryName</td>
+                        <td class="sp-num">@SalesFormat.Number(product.QuantitySold)</td>
+                        <td class="sp-num">@SalesFormat.Money(product.Revenue)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+<script type="application/json" id="sales-data">@Html.Raw(chart)</script>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+    <script src="~/js/sales.js" asp-append-version="true"></script>
+}

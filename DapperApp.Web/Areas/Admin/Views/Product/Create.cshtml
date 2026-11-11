@@ -1,0 +1,31 @@
+﻿@model CreateProductDto
+@{
+    ViewData["Title"] = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h3>Yeni Ürün Oluştur</h3>
+
+<form method="post">
+    <label>Ürün Adı</label>
+    <input type="text" asp-for="Name" class="form-control" required />
+    <br />
+    <label>Görsel Url</label>
+    <input type="text" asp-for="ImageUrl" class="form-control"  />
+    <br />
+    <label>Fiyat</label>
+    <input type="number" asp-for="Price" class="form-control"  />
+    <br />
+    <label>Stok</label>
+    <input type="number" asp-for="Stock" class="form-control"  />
+    <br />
+    <input type="checkbox" asp-for="IsActive" class="form-check-input" />
+    <label class="form-check-label">Durum</label>
+    <br />
+    <label>Kategori</label>
+    <select asp-for="CategoryId" class="form-control" asp-items="@ViewBag.Categories" required>
+        <option selected disabled>--- Kategori Seçin ---</option>
+    </select>   
+    <br />
+    <button class="btn btn-outline-dark">Kaydet</button>
+</form> 

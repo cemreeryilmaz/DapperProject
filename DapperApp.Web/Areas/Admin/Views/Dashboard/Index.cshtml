@@ -1,0 +1,137 @@
+@model DashboardViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Gösterge paneli";
+    var maxQuantity = Model.ProductsByQuantity.Count == 0 ? 1 : Model.ProductsByQuantity.Max(item => item.QuantitySold);
+    var chart = JsonSerializer.Serialize(new
+    {
+        labels = Model.Monthly.Select(item => SalesFormat.MonthLabel(item.Year, item.Month)),
+        revenue = Model.Monthly.Select(item => item.Revenue),
+        orders = Model.Monthly.Select(item => item.OrderCount),
+        categories = Model.Categories.Select(item => item.CategoryName),
+        categoryRevenue = Model.Categories.Select(item => item.Revenue),
+        cities = Model.Cities.Select(item => item.CityName),
+        cityRevenue = Model.Cities.Select(item => item.Revenue),
+        statuses = Model.Statuses.Select(item => item.Status),
+        statusCounts = Model.Statuses.Select(item => item.OrderCount)
+    });
+}
+<section class="sp-heading">
+    <div>
+        <h1>Gösterge paneli</h1>
+        <p>@Model.StartDate.ToString("dd.MM.yyyy") – @Model.EndDate.ToString("dd.MM.yyyy") · SQL süresi @Model.ElapsedMs.ToString("N0") ms</p>
+    </div>
+    <partial name="_DateFilter" model="new DateWindow(Model.StartDate, Model.EndDate, Model.EndDate.AddDays(1))" />
+</section>
+
+<section class="sp-kpis">
+    <article class="sp-kpi is-blue">
+        <span>Toplam sipariş</span>
+        <strong title="@SalesFormat.Number(Model.Kpi.TotalOrders)">@SalesFormat.Number(Model.Kpi.TotalOrders)</strong>
+        <small>Tüm durumlar</small>
+    </article>
+    <article class="sp-kpi is-mint">
+        <span>Toplam ciro</span>
+        <strong title="@SalesFormat.Money(Model.Kpi.TotalRevenue)">@SalesFormat.CompactMoney(Model.Kpi.TotalRevenue)</strong>
+        <small>İptal hariç</small>
+    </article>
+    <article class="sp-kpi is-lavender">
+        <span>Toplam müşteri</span>
+        <strong>@SalesFormat.Number(Model.Kpi.TotalCustomers)</strong>
+        <small>Dönemde siparişi olan</small>
+    </article>
+    <article class="sp-kpi is-orange">
+        <span>Ortalama sepet</span>
+        <strong>@SalesFormat.Money(Model.Kpi.AverageBasket)</strong>
+        <small>İptal hariç</small>
+    </article>
+</section>
+
+<section class="sp-grid two">
+    <article class="sp-card">
+        <h2>Aylık satış eğilimi</h2>
+        <p class="sp-note">Son seçilen aralıktaki ciro ve sipariş sayısı</p>
+        <div class="sp-chart"><canvas id="monthlyChart"></canvas></div>
+    </article>
+    <article class="sp-card">
+        <h2>Sipariş durumları</h2>
+        <p class="sp-note">Tamamlanan, kargodaki, bekleyen, iptal ve iade</p>
+        <div class="sp-chart"><canvas id="statusChart"></canvas></div>
+        <div class="sp-status-list">
+            @foreach (var status in Model.Statuses)
+            {
+                <div>
+                    <span class="sp-pill @SalesFormat.StatusClass(status.Status)">@status.Status</span>
+                    <b>@SalesFormat.Number(status.OrderCount)</b>
+                </div>
+            }
+        </div>
+    </article>
+</section>
+
+<section class="sp-grid split">
+    <article class="sp-card">
+        <h2>Kategori performansı</h2>
+        <p class="sp-note">Ciroya göre ilk 10 kategori</p>
+        <div class="sp-chart"><canvas id="categoryChart"></canvas></div>
+    </article>
+    <article class="sp-card">
+        <h2>Bölgesel dağılım</h2>
+        <p class="sp-note">En fazla satış yapılan 10 şehir</p>
+        <div class="sp-chart"><canvas id="cityChart"></canvas></div>
+    </article>
+</section>
+
+<section class="sp-grid split">
+    <article class="sp-card">
+        <h2>En çok satan ürünler</h2>
+        <p class="sp-note">Satış adedine göre</p>
+        <div class="sp-table-wrap">
+            <table class="sp-table">
+                <thead>
+                    <tr><th>Ürün</th><th>Kategori</th><th class="sp-num">Adet</th><th>Pay</th><th class="sp-num">Ciro</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.ProductsByQuantity)
+                    {
+                        var width = maxQuantity == 0 ? 0 : (double)item.QuantitySold / maxQuantity * 100;
+                        <tr>
+                            <td>@item.ProductName</td>
+                            <td>@item.CategoryName</td>
+                            <td class="sp-num">@SalesFormat.Number(item.QuantitySold)</td>
+                            <td><div class="sp-bar"><span style="width:@width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span></div></td>
+                            <td class="sp-num">@SalesFormat.Money(item.Revenue)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+    <article class="sp-card">
+        <h2>En yüksek cirolu ürünler</h2>
+        <p class="sp-note">Ciroya göre ilk 10</p>
+        <div class="sp-table-wrap">
+            <table class="sp-table">
+                <thead>
+                    <tr><th>Ürün</th><th>Kategori</th><th class="sp-num">Adet</th><th class="sp-num">Ciro</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.ProductsByRevenue)
+                    {
+                        <tr>
+                            <td>@item.ProductName</td>
+                            <td>@item.CategoryName</td>
+                            <td class="sp-num">@SalesFormat.Number(item.QuantitySold)</td>
+                            <td class="sp-num">@SalesFormat.Money(item.Revenue)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+<script type="application/json" id="dashboard-data">@Html.Raw(chart)</script>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

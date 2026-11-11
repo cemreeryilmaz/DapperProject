@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DapperApp.Web/DapperApp.Web.csproj" />
+  <Project Path="SalesPulse.DataGen/SalesPulse.DataGen.csproj" />
+</Solution>

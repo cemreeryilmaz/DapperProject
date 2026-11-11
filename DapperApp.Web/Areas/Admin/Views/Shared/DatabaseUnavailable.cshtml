@@ -1,0 +1,10 @@
+@model string
+@{
+    ViewData["Title"] = "Veritabanı";
+}
+<section class="sp-card">
+    <h1>SalesPulse veritabanına ulaşılamadı</h1>
+    <p>Şema, 2 milyon sipariş ve saklı yordamlar hazır değilse önce veri üretim aracını çalıştırın.</p>
+    <pre>dotnet run --project SalesPulse.DataGen</pre>
+    <p class="sp-note">@Model</p>
+</section>

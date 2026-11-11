@@ -1,0 +1,19 @@
+@model AdminChromeDto
+<div class="dropdown">
+    <button class="sp-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Bildirimler">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+        @if (Model.PendingCount > 0)
+        {
+            <span class="sp-badge">@(Model.PendingCount > 99 ? "99+" : Model.PendingCount.ToString())</span>
+        }
+    </button>
+    <div class="dropdown-menu dropdown-menu-end sp-menu">
+        <span class="dropdown-item-text"><b>@SalesFormat.Number(Model.PendingCount)</b> bekleyen sipariş</span>
+        @foreach (var item in Model.Recent)
+        {
+            <a class="dropdown-item" asp-area="Admin" asp-controller="OrderExplorer" asp-action="Index" asp-route-search="@item.OrderNo">
+                @item.OrderNo · @item.TotalAmount.ToString("C0")
+            </a>
+        }
+    </div>
+</div>

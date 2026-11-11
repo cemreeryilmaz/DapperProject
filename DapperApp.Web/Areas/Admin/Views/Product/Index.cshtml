@@ -1,0 +1,45 @@
+﻿@model IEnumerable<ResultProductDto>
+@{
+    ViewData["Title"] = "Product List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int count = 0;
+}
+
+<h3>Ürünler</h3>
+
+
+<table class="table table-hover table-bordered">
+
+    <tr>
+        <th>#</th>
+        <th>Görsel</th>
+        <th>Ürün Adı</th>
+        <th>Fiyat</th>
+        <th>Stok</th>
+        <th>Durum</th>
+        <th>Kategori</th>
+        <th>İşlemler</th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        count++;
+        <tr>
+            <th>@count</th>
+            <td><img src="@item.ImageUrl" style="height:75px;width:75px;" /></td>
+            <td>@item.Name</td>
+            <td>@item.Price</td>
+            <td>@item.Stock</td>
+            <td>@(item.IsActive ? "Aktif" : "Pasif")</td>
+            <td>@item.Category.Name</td>
+            <th>
+                <a href="/Admin/Product/Delete/@item.ProductId" class="btn btn-outline-danger" onclick="return confirm('Silmek istediğinize emin misiniz?')">Sil</a>
+                <a href="/Admin/Product/Update/@item.ProductId" class="btn btn-outline-info">Güncelle</a>
+                <a href="/Admin/Product/ChangeStatus/@item.ProductId" class="btn btn-outline-primary">Durumu Değiştir</a>
+            </th>
+        </tr>
+    }
+
+</table>
+
+<a href="/Admin/Product/Create" class="btn btn-outline-dark">Yeni Ürün Oluştur</a>

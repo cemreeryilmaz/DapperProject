@@ -1,0 +1,173 @@
+@model OrderExplorerViewModel
+@{
+    ViewData["Title"] = "Sipariş yönetimi";
+    var query = Model.Query;
+    string SortDir(string column)
+    {
+        if (!string.Equals(query.SortColumn, column, StringComparison.OrdinalIgnoreCase))
+            return column is "CustomerName" or "CityName" or "Status" or "PaymentMethod" or "OrderNo" ? "ASC" : "DESC";
+        return query.SortDirection == "ASC" ? "DESC" : "ASC";
+    }
+    var from = Model.TotalCount == 0 ? 0 : ((query.Page - 1) * query.PageSize) + 1;
+    var to = Math.Min(Model.TotalCount, (long)query.Page * query.PageSize);
+    var firstPage = Math.Max(1, query.Page - 2);
+    var lastPage = Math.Max(firstPage, Math.Min(Model.TotalPages, query.Page + 2));
+}
+<section class="sp-heading">
+    <div>
+        <h1>Sipariş yönetimi</h1>
+        <p>@SalesFormat.Number(Model.TotalCount) kayıt · sayfa SQL OFFSET/FETCH ile geliyor · @Model.ElapsedMs.ToString("N0") ms</p>
+    </div>
+    <a class="sp-btn-ghost" href="@Url.Action("Export", query.ToRoute(1))">CSV indir</a>
+</section>
+<div class="sp-alert">Dışa aktarma, ekrandaki filtrelerin ilk 10.000 satırıyla sınırlıdır. Tüm sonuç uygulama belleğine alınmaz.</div>
+<form method="get" class="sp-card sp-filters" style="margin-bottom:14px">
+    <div class="sp-field">
+        <label for="search">Sipariş no / müşteri</label>
+        <input id="search" name="search" value="@query.Search" />
+    </div>
+    <div class="sp-field">
+        <label for="start">Başlangıç</label>
+        <input id="start" type="date" name="start" value="@query.StartDate?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="sp-field">
+        <label for="end">Bitiş</label>
+        <input id="end" type="date" name="end" value="@query.EndDate?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="sp-field">
+        <label for="cityId">Şehir</label>
+        <select id="cityId" name="cityId">
+            <option value="">Tümü</option>
+            @foreach (var city in Model.Cities)
+            {
+                if (query.CityId == city.CityId)
+                {
+                    <option value="@city.CityId" selected>@city.Name</option>
+                }
+                else
+                {
+                    <option value="@city.CityId">@city.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="sp-field">
+        <label for="status">Durum</label>
+        <select id="status" name="status">
+            <option value="">Tümü</option>
+            @foreach (var status in OrderStatuses.All)
+            {
+                if (query.Status == status)
+                {
+                    <option value="@status" selected>@status</option>
+                }
+                else
+                {
+                    <option value="@status">@status</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="sp-field">
+        <label for="minAmount">Min tutar</label>
+        <input id="minAmount" name="minAmount" inputmode="decimal" value="@query.MinAmount?.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+    </div>
+    <div class="sp-field">
+        <label for="maxAmount">Max tutar</label>
+        <input id="maxAmount" name="maxAmount" inputmode="decimal" value="@query.MaxAmount?.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+    </div>
+    <div class="sp-field">
+        <label for="pageSize">Sayfa</label>
+        <select id="pageSize" name="pageSize">
+            @foreach (var size in new[] { 25, 50, 100 })
+            {
+                if (query.PageSize == size)
+                {
+                    <option value="@size" selected>@size</option>
+                }
+                else
+                {
+                    <option value="@size">@size</option>
+                }
+            }
+        </select>
+    </div>
+    <input type="hidden" name="sort" value="@query.SortColumn" />
+    <input type="hidden" name="dir" value="@query.SortDirection" />
+    <button class="sp-btn" type="submit">Filtrele</button>
+</form>
+
+<section class="sp-card">
+    <div class="sp-table-wrap">
+        <table class="sp-table">
+            <thead>
+                <tr>
+                    <th><a href="@Url.Action("Index", query.ToRoute(1, "OrderNo", SortDir("OrderNo")))">Sipariş no</a></th>
+                    <th><a href="@Url.Action("Index", query.ToRoute(1, "CustomerName", SortDir("CustomerName")))">Müşteri</a></th>
+                    <th><a href="@Url.Action("Index", query.ToRoute(1, "CityName", SortDir("CityName")))">Şehir</a></th>
+                    <th><a href="@Url.Action("Index", query.ToRoute(1, "OrderDate", SortDir("OrderDate")))">Tarih</a></th>
+                    <th class="sp-num"><a href="@Url.Action("Index", query.ToRoute(1, "TotalAmount", SortDir("TotalAmount")))">Tutar</a></th>
+                    <th><a href="@Url.Action("Index", query.ToRoute(1, "PaymentMethod", SortDir("PaymentMethod")))">Ödeme</a></th>
+                    <th><a href="@Url.Action("Index", query.ToRoute(1, "Status", SortDir("Status")))">Durum</a></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items.Count == 0)
+                {
+                    <tr><td colspan="7" class="sp-empty">Bu filtreyle sipariş bulunamadı.</td></tr>
+                }
+                @foreach (var item in Model.Items)
+                {
+                    <tr class="clickable" data-order-id="@item.OrderId">
+                        <td>@item.OrderNo</td>
+                        <td>@item.CustomerName</td>
+                        <td>@item.CityName</td>
+                        <td>@item.OrderDate.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td class="sp-num">@SalesFormat.Money(item.TotalAmount)</td>
+                        <td>@item.PaymentMethod</td>
+                        <td><span class="sp-pill @SalesFormat.StatusClass(item.Status)">@item.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="sp-pager">
+        <span class="sp-note">@SalesFormat.Number(from)–@SalesFormat.Number(to) / @SalesFormat.Number(Model.TotalCount)</span>
+        <div class="sp-pages">
+            @if (query.Page > 1)
+            {
+                <a href="@Url.Action("Index", query.ToRoute(query.Page - 1))">Önceki</a>
+            }
+            @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
+            {
+                if (pageNumber == query.Page)
+                {
+                    <span class="is-current">@pageNumber</span>
+                }
+                else
+                {
+                    <a href="@Url.Action("Index", query.ToRoute(pageNumber))">@pageNumber</a>
+                }
+            }
+            @if (query.Page < Model.TotalPages)
+            {
+                <a href="@Url.Action("Index", query.ToRoute(query.Page + 1))">Sonraki</a>
+            }
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="orderModalTitle">Sipariş</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body" id="orderModalBody"></div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/orders.js" asp-append-version="true"></script>
+}

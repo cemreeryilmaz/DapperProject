@@ -1,0 +1,21 @@
+@model DateWindow
+@{
+    var today = DateTime.Today;
+    string Link(DateTime start, DateTime end) => $"?start={start:yyyy-MM-dd}&end={end:yyyy-MM-dd}";
+}
+<form method="get" class="sp-date-filter">
+    <div class="sp-field">
+        <label for="start">Başlangıç</label>
+        <input id="start" type="date" name="start" value="@Model.Start.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="sp-field">
+        <label for="end">Bitiş</label>
+        <input id="end" type="date" name="end" value="@Model.EndInclusive.ToString("yyyy-MM-dd")" />
+    </div>
+    <button class="sp-btn" type="submit">Uygula</button>
+    <div class="sp-presets">
+        <a href="@Link(today.AddDays(-29), today)">30 gün</a>
+        <a href="@Link(today.AddMonths(-12), today)">12 ay</a>
+        <a href="@Link(new DateTime(today.Year, 1, 1), today)">Bu yıl</a>
+    </div>
+</form>
