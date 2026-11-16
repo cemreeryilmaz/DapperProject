@@ -6,33 +6,33 @@ Türkiye genelinde satış yapan bir e-ticaret operasyonunun yönetim paneli. Si
 
 Gösterge paneli, son 12 ay. Kartlar ve grafikler seçilen tarih aralığı için yeniden sorgulanır.
 
-![Gösterge paneli](docs/screenshots/dashboard.png)
+![Gösterge paneli](docs/screenshots/gosterge-paneli.png)
 
 Sipariş listesi. Arama, şehir, durum, tutar ve tarih filtreleri sunucuda uygulanır. Sayfalama `OFFSET/FETCH` kullanır.
 
-![Sipariş yönetimi](docs/screenshots/orders.png)
+![Sipariş yönetimi](docs/screenshots/siparisler.png)
 
 Sipariş satırına tıklanınca ödeme ve kalemler aynı veritabanından gelir.
 
-![Sipariş detayı](docs/screenshots/order-detail.png)
+![Sipariş detayı](docs/screenshots/siparis-detay.png)
 
 Satış analizi, önceki dönemle karşılaştırma, tekrar alışveriş oranı ve en yüksek cirolu müşteriler.
 
-![Satış analizi](docs/screenshots/sales.png)
+![Satış analizi](docs/screenshots/satis-analizi.png)
 
 Ürün ve kategori ekranları da `DapperProjectDb` içindeki katalogu okur.
 
-![Ürünler](docs/screenshots/products.png)
+![Ürünler](docs/screenshots/urunler.png)
 
-![Kategoriler](docs/screenshots/categories.png)
+![Kategoriler](docs/screenshots/kategoriler.png)
 
-![Yeni ürün](docs/screenshots/product-create.png)
+![Yeni ürün](docs/screenshots/urun-ekle.png)
 
-![Ürün güncelle](docs/screenshots/product-update.png)
+![Ürün güncelle](docs/screenshots/urun-guncelle.png)
 
-![Yeni kategori](docs/screenshots/category-create.png)
+![Yeni kategori](docs/screenshots/kategori-ekle.png)
 
-![Kategori güncelle](docs/screenshots/category-update.png)
+![Kategori güncelle](docs/screenshots/kategori-guncelle.png)
 
 ## Ne var?
 
